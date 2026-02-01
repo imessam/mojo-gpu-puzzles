@@ -16,7 +16,7 @@ fn add_10_guard(
     size: UInt,
 ):
     i = thread_idx.x
-    # FILL ME IN (roughly 2 lines)
+    if i < size : output[i] = a[i] + 10
 
 
 # ANCHOR_END: add_10_guard
@@ -24,10 +24,13 @@ fn add_10_guard(
 
 def main():
     with DeviceContext() as ctx:
+
         out = ctx.enqueue_create_buffer[dtype](SIZE)
         out.enqueue_fill(0)
+
         a = ctx.enqueue_create_buffer[dtype](SIZE)
         a.enqueue_fill(0)
+
         with a.map_to_host() as a_host:
             for i in range(SIZE):
                 a_host[i] = i
