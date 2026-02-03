@@ -18,7 +18,9 @@ fn add_10_2d(
 ):
     row = thread_idx.y
     col = thread_idx.x
-    # FILL ME IN (roughly 2 lines)
+    
+    if row < size and col < size:
+        output[row, col] = a[row, col] + 10
 
 
 # ANCHOR_END: add_10_2d_layout_tensor
@@ -26,8 +28,10 @@ fn add_10_2d(
 
 def main():
     with DeviceContext() as ctx:
+
         out_buf = ctx.enqueue_create_buffer[dtype](SIZE * SIZE)
         out_buf.enqueue_fill(0)
+        
         out_tensor = LayoutTensor[dtype, layout, MutAnyOrigin](out_buf)
         print("out shape:", out_tensor.shape[0](), "x", out_tensor.shape[1]())
 
