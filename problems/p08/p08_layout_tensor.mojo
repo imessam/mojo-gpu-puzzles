@@ -10,6 +10,7 @@ comptime SIZE = 8
 comptime BLOCKS_PER_GRID = (2, 1)
 comptime THREADS_PER_BLOCK = (TPB, 1)
 comptime dtype = DType.float32
+
 comptime layout = Layout.row_major(SIZE)
 
 
@@ -20,6 +21,7 @@ fn add_10_shared_layout_tensor[
     a: LayoutTensor[dtype, layout, ImmutAnyOrigin],
     size: UInt,
 ):
+
     # Allocate shared memory using LayoutTensor with explicit address_space
     shared = LayoutTensor[
         dtype,
@@ -36,16 +38,19 @@ fn add_10_shared_layout_tensor[
 
     barrier()
 
-    # FILL ME IN (roughly 2 lines)
+    if global_i < SIZE :
+        output[global_i] = shared[local_i] + 10
 
 
 # ANCHOR_END: add_10_shared_layout_tensor
 
 
 def main():
+
     with DeviceContext() as ctx:
         out = ctx.enqueue_create_buffer[dtype](SIZE)
         out.enqueue_fill(0)
+
         a = ctx.enqueue_create_buffer[dtype](SIZE)
         a.enqueue_fill(1)
 

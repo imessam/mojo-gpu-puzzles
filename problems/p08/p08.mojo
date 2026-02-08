@@ -22,8 +22,10 @@ fn add_10_shared(
         Scalar[dtype],
         address_space = AddressSpace.SHARED,
     ]()
+
     global_i = block_dim.x * block_idx.x + thread_idx.x
     local_i = thread_idx.x
+
     # Load local data into shared memory
     if global_i < size:
         shared[local_i] = a[global_i]
@@ -32,7 +34,9 @@ fn add_10_shared(
     # works within a thread block
     barrier()
 
-    # FILL ME IN (roughly 2 lines)
+    if global_i < SIZE:
+        output[global_i] = shared[local_i] + 10
+
 
 
 # ANCHOR_END: add_10_shared
@@ -42,8 +46,10 @@ def main():
     with DeviceContext() as ctx:
         out = ctx.enqueue_create_buffer[dtype](SIZE)
         out.enqueue_fill(0)
+
         a = ctx.enqueue_create_buffer[dtype](SIZE)
         a.enqueue_fill(1)
+
         ctx.enqueue_function[add_10_shared, add_10_shared](
             out,
             a,
