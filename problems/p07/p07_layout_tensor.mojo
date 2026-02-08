@@ -8,6 +8,7 @@ comptime SIZE = 5
 comptime BLOCKS_PER_GRID = (2, 2)
 comptime THREADS_PER_BLOCK = (3, 3)
 comptime dtype = DType.float32
+
 comptime out_layout = Layout.row_major(SIZE, SIZE)
 comptime a_layout = Layout.row_major(SIZE, SIZE)
 
@@ -22,7 +23,9 @@ fn add_10_blocks_2d[
 ):
     row = block_dim.y * block_idx.y + thread_idx.y
     col = block_dim.x * block_idx.x + thread_idx.x
-    # FILL ME IN (roughly 2 lines)
+   
+    if row < SIZE and col < SIZE :
+        output[row, col] = a[row, col] + 10
 
 
 # ANCHOR_END: add_10_blocks_2d_layout_tensor

@@ -17,18 +17,23 @@ fn add_10_blocks_2d(
 ):
     row = block_dim.y * block_idx.y + thread_idx.y
     col = block_dim.x * block_idx.x + thread_idx.x
-    # FILL ME IN (roughly 2 lines)
+    
+    if row < SIZE and col < SIZE:
+        output[row * SIZE + col] = a[row * SIZE + col] + 10
 
 
 # ANCHOR_END: add_10_blocks_2d
 
 
 def main():
+
     with DeviceContext() as ctx:
         out = ctx.enqueue_create_buffer[dtype](SIZE * SIZE)
         out.enqueue_fill(0)
+
         expected = ctx.enqueue_create_host_buffer[dtype](SIZE * SIZE)
         expected.enqueue_fill(1)
+
         a = ctx.enqueue_create_buffer[dtype](SIZE * SIZE)
         a.enqueue_fill(1)
 

@@ -18,20 +18,28 @@ fn broadcast_add(
 ):
     row = thread_idx.y
     col = thread_idx.x
-    # FILL ME IN (roughly 2 lines)
+    
+    if row < SIZE and col < SIZE:
+        output[row * SIZE + col] = a[col] + b[row]
 
 
 # ANCHOR_END: broadcast_add
 def main():
+
     with DeviceContext() as ctx:
+
         out = ctx.enqueue_create_buffer[dtype](SIZE * SIZE)
         out.enqueue_fill(0)
+
         expected = ctx.enqueue_create_host_buffer[dtype](SIZE * SIZE)
         expected.enqueue_fill(0)
+
         a = ctx.enqueue_create_buffer[dtype](SIZE)
         a.enqueue_fill(0)
+
         b = ctx.enqueue_create_buffer[dtype](SIZE)
         b.enqueue_fill(0)
+
         with a.map_to_host() as a_host, b.map_to_host() as b_host:
             for i in range(SIZE):
                 a_host[i] = i + 1
