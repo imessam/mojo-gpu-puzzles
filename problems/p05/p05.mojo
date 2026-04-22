@@ -27,6 +27,9 @@ def broadcast_add(
     var col = thread_idx.x
     # FILL ME IN (roughly 2 lines)
 
+    if row < SIZE and col < SIZE:
+        output[row, col] = a[0, col] + b[row, 0]
+
 
 # ANCHOR_END: broadcast_add
 def main() raises:
