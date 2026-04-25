@@ -27,7 +27,30 @@ def dot_product(
     size: Int,
 ):
     # FILL ME IN (roughly 13 lines)
-    ...
+    
+
+    shared = stack_allocation[dtype=dtype, address_space=AddressSpace.SHARED](row_major[TPB]())
+
+    global_idx = block_dim.x * block_idx.x + thread_idx.x
+    local_idx = thread_idx.x
+
+    if global_idx < SIZE:
+        shared[local_idx] = a[local_idx] * b[local_idx]
+
+    barrier()
+
+    stride = SIZE // 2
+
+    while local_idx < stride:
+
+        shared[local_idx] += shared[local_idx + stride]
+
+        barrier()
+
+        stride //= 2
+    
+    if global_idx == 0:
+        output[0] = shared[0]
 
 
 # ANCHOR_END: dot_product
