@@ -31,6 +31,20 @@ def conv_1d_simple(
     var local_i = thread_idx.x
     # FILL ME IN (roughly 14 lines)
 
+    shared_a = stack_allocation[dtype, AddressSpace.SHARED](row_major[SIZE]())
+    shared_b = stack_allocation[dtype, AddressSpace.SHARED](row_major[CONV]())
+
+    if global_i < SIZE:
+        shared_a[local_i] = a[global_i]
+    if global_i < CONV:
+        shared_b[local_i] = b[global_i]
+
+    barrier()
+
+    for j in range(CONV):
+        if (global_i + j) < SIZE:
+            output[global_i] += shared_a[local_i + j] * shared_b[j] 
+
 
 # ANCHOR_END: conv_1d_simple
 
@@ -56,20 +70,30 @@ def conv_1d_block_boundary(
     var local_i = thread_idx.x
     # FILL ME IN (roughly 18 lines)
 
+    shared = stack_allocation[dtype, AddressSpace.SHARED](row_major[TPB]())
+
+    if global_i < SIZE:
+        shared[local_i] = a[global_i] * b[global_i % CONV_2]
+
 
 # ANCHOR_END: conv_1d_block_boundary
 
 
 def main() raises:
     with DeviceContext() as ctx:
+
         var size = SIZE_2 if argv()[1] == "--block-boundary" else SIZE
         var conv = CONV_2 if argv()[1] == "--block-boundary" else CONV
+
         var out = ctx.enqueue_create_buffer[dtype](size)
         out.enqueue_fill(0)
+
         var a = ctx.enqueue_create_buffer[dtype](size)
         a.enqueue_fill(0)
+
         var b = ctx.enqueue_create_buffer[dtype](conv)
         b.enqueue_fill(0)
+
         with a.map_to_host() as a_host:
             for i in range(size):
                 a_host[i] = Scalar[dtype](i)
