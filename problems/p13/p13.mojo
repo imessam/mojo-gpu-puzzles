@@ -70,10 +70,25 @@ def conv_1d_block_boundary(
     var local_i = thread_idx.x
     # FILL ME IN (roughly 18 lines)
 
-    shared = stack_allocation[dtype, AddressSpace.SHARED](row_major[TPB]())
+    shared_a = stack_allocation[dtype, AddressSpace.SHARED](row_major[TPB + CONV_2 - 1]())
+    shared_b = stack_allocation[dtype, AddressSpace.SHARED](row_major[CONV_2]())
 
-    if global_i < SIZE:
-        shared[local_i] = a[global_i] * b[global_i % CONV_2]
+    if global_i < SIZE_2:
+        shared_a[local_i] = a[global_i]
+
+    if local_i == (TPB - 1):
+        for i in range(CONV_2 - 1):
+            if global_i + i + 1 < SIZE_2:
+                shared_a[local_i + i + 1] = a[global_i + i + 1]
+
+    if (global_i % TPB) < CONV_2:
+        shared_b[local_i] = b[global_i % TPB]
+
+    barrier()
+        
+    for j in range(CONV_2):
+        if (local_i + j) < (TPB + CONV_2 - 1):
+            output[global_i] += shared_a[local_i + j] * shared_b[j] 
 
 
 # ANCHOR_END: conv_1d_block_boundary
