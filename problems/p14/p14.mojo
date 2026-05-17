@@ -27,6 +27,24 @@ def prefix_sum_simple(
     var local_i = thread_idx.x
     # FILL ME IN (roughly 18 lines)
 
+    shared = stack_allocation[dtype, address_space = AddressSpace.SHARED](row_major[SIZE]())
+
+    if global_i < SIZE:
+        shared[local_i] = a[global_i]
+
+    barrier()
+
+    offset = 1
+
+    while local_i >= offset:
+
+        shared[local_i] += shared[local_i - offset]
+        offset *= 2
+        barrier()
+    
+    if global_i < SIZE:
+        output[global_i] = shared[local_i]
+
 
 # ANCHOR_END: prefix_sum_simple
 
@@ -51,6 +69,31 @@ def prefix_sum_local_phase(
     var local_i = thread_idx.x
     # FILL ME IN (roughly 20 lines)
 
+    shared = stack_allocation[dtype, address_space = AddressSpace.SHARED](row_major[TPB]())
+
+    if global_i < SIZE_2:
+        shared[local_i] = a[global_i]
+
+    barrier()
+
+    offset = 1
+
+    while local_i >= offset:
+
+        shared[local_i] += shared[local_i - offset]
+        offset *= 2
+        barrier()
+    
+    if global_i < SIZE_2:
+        output[global_i] = shared[local_i]
+
+
+    if local_i == (TPB - 1):
+        output[SIZE_2 + block_idx.x] = shared[local_i]
+
+
+    
+
 
 # Kernel 2: Add block sums to their respective blocks
 def prefix_sum_block_sum_phase(
@@ -59,6 +102,9 @@ def prefix_sum_block_sum_phase(
 ):
     var global_i = block_dim.x * block_idx.x + thread_idx.x
     # FILL ME IN (roughly 3 lines)
+
+    if global_i < SIZE_2 and global_i >= TPB:
+        output[global_i] += output[SIZE_2]
 
 
 # ANCHOR_END: prefix_sum_complete
