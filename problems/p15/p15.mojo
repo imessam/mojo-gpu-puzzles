@@ -19,6 +19,7 @@ comptime in_layout = row_major[BATCH, SIZE]()
 comptime InLayout = type_of(in_layout)
 comptime out_layout = row_major[BATCH, 1]()
 comptime OutLayout = type_of(out_layout)
+comptime shared_layout = row_major[TPB]()
 
 
 def axis_sum(
@@ -30,6 +31,27 @@ def axis_sum(
     var local_i = thread_idx.x
     var batch = block_idx.y
     # FILL ME IN (roughly 15 lines)
+
+    shared = stack_allocation[dtype = dtype, address_space = AddressSpace.SHARED](shared_layout)
+
+    if global_i < SIZE:
+        shared[global_i] = a[batch, local_i]
+    
+    barrier()
+
+    stride = TPB // 2
+
+    while stride > 0 and local_i < stride:
+
+        shared[local_i] += shared[local_i + stride]
+
+        barrier()
+
+        stride //= 2
+
+    if local_i == 0:
+        output[batch, 0] = shared[local_i]
+
 
 
 # ANCHOR_END: axis_sum
