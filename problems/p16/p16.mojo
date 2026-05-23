@@ -28,6 +28,12 @@ def naive_matmul(
     var col = block_dim.x * block_idx.x + thread_idx.x
     # FILL ME IN (roughly 6 lines)
 
+    if row < SIZE and col < SIZE:
+        
+        @parameter
+        for i in range(SIZE):
+            output[col, row] += a[i, row] * b[col, i]
+
 
 # ANCHOR_END: naive_matmul
 
