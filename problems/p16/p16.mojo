@@ -50,6 +50,31 @@ def single_block_matmul(
     var local_col = thread_idx.x
     # FILL ME IN (roughly 12 lines)
 
+    shared_a = stack_allocation[dtype, AddressSpace.SHARED](row_major[TPB, TPB]())
+    shared_b = stack_allocation[dtype, AddressSpace.SHARED](row_major[TPB, TPB]())
+
+    if row < SIZE and col < SIZE:
+        shared_a[local_col, local_row] = a[col, row]
+        shared_b[local_col, local_row] = b[col, row]
+
+    barrier()
+
+    var acc: output.ElementType = 0
+
+    if local_row < SIZE and local_col < SIZE:
+        
+        @parameter
+        for i in range(SIZE):
+            acc += shared_a[i, local_row] * shared_b[local_col, i]
+    
+    barrier()
+        
+    if row < SIZE and col < SIZE:
+        output[col, row] = acc
+
+    
+
+
 
 # ANCHOR_END: single_block_matmul
 
