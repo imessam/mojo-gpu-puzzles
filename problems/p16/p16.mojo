@@ -32,7 +32,7 @@ def naive_matmul(
         
         @parameter
         for i in range(SIZE):
-            output[col, row] += a[i, row] * b[col, i]
+            output[row, col] += a[row, i] * b[i, col]
 
 
 # ANCHOR_END: naive_matmul
@@ -54,23 +54,21 @@ def single_block_matmul(
     shared_b = stack_allocation[dtype, AddressSpace.SHARED](row_major[TPB, TPB]())
 
     if row < SIZE and col < SIZE:
-        shared_a[local_col, local_row] = a[col, row]
-        shared_b[local_col, local_row] = b[col, row]
+        shared_a[local_row, local_col] = a[row, col]
+        shared_b[local_row, local_col] = b[row, col]
 
     barrier()
 
     var acc: output.ElementType = 0
-
-    if local_row < SIZE and local_col < SIZE:
-        
-        @parameter
-        for i in range(SIZE):
-            acc += shared_a[i, local_row] * shared_b[local_col, i]
+    
+    @parameter
+    for i in range(TPB):
+        acc += shared_a[local_row, i] * shared_b[i, local_col]
     
     barrier()
         
     if row < SIZE and col < SIZE:
-        output[col, row] = acc
+        output[row, col] = acc
 
     
 
@@ -95,8 +93,30 @@ def matmul_tiled(
     var local_col = thread_idx.x
     var tiled_row = block_idx.y * TPB + thread_idx.y
     var tiled_col = block_idx.x * TPB + thread_idx.x
+
     # FILL ME IN (roughly 20 lines)
 
+    shared_a = stack_allocation[dtype, AddressSpace.SHARED](row_major[TPB, TPB]())
+    shared_b = stack_allocation[dtype, AddressSpace.SHARED](row_major[TPB, TPB]())
+
+    var sum: output.ElementType = 0
+
+    @parameter
+    for tile_idx in range(SIZE_TILED // TPB):
+
+        if tiled_row < SIZE_TILED and tiled_col < SIZE_TILED:
+            shared_a[local_row, local_col] = a[tiled_row, (tile_idx * TPB) + local_col]
+            shared_b[local_row, local_col] = b[(tile_idx * TPB) + local_row, tiled_col]
+
+        barrier()
+
+        for i in range(TPB):
+            sum += shared_a[local_row, i] * shared_b[i, local_col]
+        
+        barrier()
+
+    output[tiled_row, tiled_col] = sum 
+    
 
 # ANCHOR_END: matmul_tiled
 
